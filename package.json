@@ -1,0 +1,42 @@
+{
+    "name": "com.fuzzphyte.utility.animation",
+    "version": "0.1.0",
+    "displayName": "FP Animation",
+    "description": "FP Utility Animation is a collection of useful utilities for Unity animation, IK, rigging, and timeline",
+    "unity": "6000.2",
+    "unityRelease": "0f1",
+    "documentationUrl": "https://github.com/jshull/FP_Animation/blob/main/README.md",
+    "changelogUrl": "https://github.com/JShull/FP_Animation/blob/main/CHANGELOG.md",
+    "licensesUrl": "https://github.com/jshull/FP_Animation/blob/main/LICENSE.md",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/jshull/FP_Animation.git"
+    },
+    "dependencies": {
+      "com.unity.mathematics": "1.3.2",
+      "com.unity.textmeshpro": "3.0.9",
+      "com.unity.shadergraph":"17.1.0",
+      "com.unity.splines":"2.8.2",
+      "com.unity.timeline":"1.8.9",
+      "com.unity.animation.rigging":"1.3.1"
+    },
+    "samples": [
+      {
+        "displayName": "Utility Samples",
+        "description": "IK sample using OnAnimatorIK and Spline Navigation Sample.",
+        "path": "Samples~/SamplesURP"
+      }
+    ],
+    "keywords": [
+      "ScriptableObject",
+      "FuzzPhyte",
+      "Utility",
+      "Animation"
+    ],
+    "author": {
+      "name": "John Shull",
+      "email": "the.john.shull@gmail.com",
+      "url": "https://github.com/jshull"
+    },
+    "type": "tool"
+  }
