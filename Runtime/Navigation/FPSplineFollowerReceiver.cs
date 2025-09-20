@@ -2,6 +2,8 @@ namespace FuzzPhyte.Utility.Animation
 {
     using UnityEngine;
     using UnityEngine.Playables;
+    using UnityEngine.Splines;
+    using System.Collections.Generic;
     /// <summary>
     /// Put this on the same GameObject as the PlayableDirector or anywhere reachable; 
     /// then assign it as a notification receiver on your FP_SplineFollowTrack in Timeline.
@@ -10,7 +12,7 @@ namespace FuzzPhyte.Utility.Animation
     {
         [Tooltip("Target follower; if null, tries to find from the Playable's userData (track binding).")]
         public FPSplineFollower target;
-
+        public List<SplineContainer> OrderedSplineContainers = new();
         public void OnNotify(Playable origin, INotification notification, object context)
         {
             if (notification is FPSplineCommandMarker cmd)
@@ -38,6 +40,13 @@ namespace FuzzPhyte.Utility.Animation
                     case FPSplineCommand.SetSpeedMultiplier: follower.SetSpeedMultiplier(cmd.value); break;
                     case FPSplineCommand.WarpToT: follower.WarpToNormalizedT(cmd.value); break;
                     case FPSplineCommand.SetT: follower.SetNormalizedT(cmd.value); break;
+                    case FPSplineCommand.NewSpline:
+                        if (cmd.SplineContainerIndex < OrderedSplineContainers.Count)
+                        {
+                            follower.HotSplineSwap(OrderedSplineContainers[cmd.SplineContainerIndex], cmd.value);
+                        }
+                        
+                        break;
                 }
             }
         }

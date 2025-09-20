@@ -29,6 +29,14 @@
         protected bool _paused;
         protected bool _stopped;
 
+        public virtual void HotSplineSwap(SplineContainer newContainer, float splineStartValue)
+        {
+            _paused = true;
+            TheSpline = newContainer;
+            t = Mathf.Clamp01(splineStartValue);
+            UpdateTransform();
+            _paused = false;
+        }
         public virtual void Update()
         {
             // If you also want free-run (not Timeline-driven), you can add optional logic here.

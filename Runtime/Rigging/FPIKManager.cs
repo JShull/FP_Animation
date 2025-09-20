@@ -7,7 +7,7 @@
 
     public class FPIKManager : MonoBehaviour
     {
-        [SerializeField] protected float handRtDis = 0;
+        [SerializeField] protected float handDist = 0;
         [Header("General IK Setting")]
         public HeadIKProvider IKProvider = HeadIKProvider.AnimatorIK;
         public bool MaintainOffset = true;
@@ -104,18 +104,29 @@
             {
                 return;
             }
-            if (UseHandIK && IKProvider==HeadIKProvider.AnimationRigging)
+            if(IKProvider == HeadIKProvider.AnimationRigging)
             {
-                EnsureHandSetupRigging();
+                //all rigging related start up
+                //hands setup
+                if (UseHandIK)
+                {
+                    EnsureHandSetupRigging();
+                }
+                //head setup
+                if (UseHeadIK)
+                {
+                    EnsureHeadAimSetupRigging();
+                }
+                //debugging?
+                if (UseLeftHandIK && ShowLeftHandGizmo)
+                {
+                    DebugArmReach(LeftArmConstraint.data.root, LeftArmConstraint.data.mid, LeftArmConstraint.data.tip, LeftHandTarget);
+                }
+                if (UseRightHandIK && ShowRightHandGizmo)
+                {
+                    DebugArmReach(RightArmConstraint.data.root, RightArmConstraint.data.mid, RightArmConstraint.data.tip, RightHandTarget);
+                }
             }
-            
-            if (UseHeadIK && IKProvider == HeadIKProvider.AnimationRigging)
-            {
-                EnsureHeadAimSetupRigging();
-                DebugArmReach(RightArmConstraint.data.root, RightArmConstraint.data.mid, RightArmConstraint.data.tip, RightHandTarget);
-                DebugArmReach(LeftArmConstraint.data.root, LeftArmConstraint.data.mid, LeftArmConstraint.data.tip, LeftHandTarget);
-            }
-            
         }
         protected virtual void OnValidate()
         {
@@ -150,14 +161,16 @@
                 var w = ComputeHeadWeight(useAnimatorIK: false, externalGate: HeadAimConstraint.weight);
                 HeadAimConstraint.weight = w;
             }
-            if(UseHandIK || RightArmConstraint != null)
+            if(UseRightHandIK && RightArmConstraint != null)
             {
                 //new stuff
-                UpdateArmIK(RightArmConstraint, RightHandTarget);
-                UpdateArmIK(LeftArmConstraint, LeftHandTarget);
-                //old stuff
-                //var rightHandW = ComputeHandIK(RightArmConstraint, RightHandTarget, RightHandHint, RightHandWeightScale, true);
-                //RightArmConstraint.weight = rightHandW;
+                rightHandPos = RightArmConstraint.data.tip.position;
+                UpdateArmIK(RightArmConstraint, RightHandTarget,RightHandHint,RightHandWeightScale,true);
+            }
+            if(UseLeftHandIK && LeftArmConstraint != null)
+            {
+                leftHandPos = LeftArmConstraint.data.tip.position;
+                UpdateArmIK(LeftArmConstraint, LeftHandTarget,LeftHandHint,LeftHandWeightScale,false);
             }
         }
 
@@ -238,23 +251,21 @@
         }
         protected virtual float ComputeHandIK(TwoBoneIKConstraint constraint, Transform target, Transform hint, float weightScale, bool rightHand=false)
         {
-            handRtDis = Vector3.Distance(constraint.data.tip.position, target.position);
-            if(handRtDis <= ReachProximityMax)
+            handDist = Vector3.Distance(constraint.data.tip.position, target.position);
+            if(handDist <= ReachProximityMax)
             {
-                var normalizedHandWeight = 1f - Mathf.InverseLerp(0, ReachProximityMax, handRtDis);
+                var normalizedHandWeight = 1f - Mathf.InverseLerp(0, ReachProximityMax, handDist);
                 Vector3 toTarget = target.position - HipRelativeForward.position;
                 var laterialBias = Vector3.Dot(HipRelativeForward.right, toTarget.normalized);
                 float lateralAdjustment = 0;
                 if (rightHand)
                 {
                     lateralAdjustment = Mathf.Clamp01(1f - Mathf.Abs(-laterialBias)); // flip the sign
-                    
                     rightHandPos = constraint.data.tip.position;
                 }
                 else
                 {
                     lateralAdjustment = Mathf.Clamp01(1f - Mathf.Abs(laterialBias)); // 1 when centered, 0 when far left
-                    //lateralAdjustment = Mathf.Clamp01(1f - Mathf.Abs(-laterialBias)); // flip the sign
                     leftHandPos = constraint.data.tip.position;
                 }
                
@@ -263,7 +274,7 @@
             }
             return 0;
         }
-        protected virtual void UpdateArmIK(TwoBoneIKConstraint constraint,Transform target)
+        protected virtual void UpdateArmIK(TwoBoneIKConstraint constraint,Transform target,Transform hint, float externalWeight,bool rightHand)
         {
             var data = constraint.data;
 
@@ -280,8 +291,12 @@
             float reachFactor = Mathf.Clamp01(near * far);     // 1 in the sweet spot, 0 near singularities
 
             // position weight: your existing hand weight (0..1)
-            float posW = ComputeHandWeight(data.root, data.mid, data.tip, target, false);
-
+            // method 1
+            float posW = ComputeHandWeight(data.root, data.mid, data.tip, target, false,externalWeight);
+            
+            // method 2
+            //float posW = ComputeHandIK(constraint, target, hint, externalWeight, rightHand);
+            
             // rotation weight fades near singularities
             float baseRotW = 0.35f;                 // feel free to expose
             float rotW = baseRotW * (reachFactor * reachFactor); // square for stronger falloff
@@ -511,7 +526,7 @@
                     leftHandRef = LeftHandRef.position;
                 }
                 float lftRadius = Mathf.Clamp(leftHandDist, .05f, .25f);
-                if (leftHandDist <= ReachProximityMax && LeftHandRef != null)
+                if (leftHandDist <= ReachProximityMax)
                 {
                     Gizmos.color = LeftHandTargetColor;
                     Gizmos.DrawWireSphere(LeftHandTarget.position, lftRadius);

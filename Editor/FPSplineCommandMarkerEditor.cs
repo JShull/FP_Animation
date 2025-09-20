@@ -18,6 +18,7 @@ namespace FuzzPhyte.Utility.Animation.Editor
             FPSplineCommand.SetSpeedMultiplier => new Color(0.20f, 0.65f, 0.85f), // teal
             FPSplineCommand.SetT => new Color(0.25f, 0.55f, 0.95f), // blue
             FPSplineCommand.WarpToT => new Color(0.95f, 0.25f, 0.55f), // pink
+            FPSplineCommand.NewSpline => new Color(0.95f,0.25f,0.55f),
             _ => new Color(0.5f, 0.5f, 0.5f)
         };
         // --- Different built-in icons per command ---
