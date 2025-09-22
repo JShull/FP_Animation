@@ -5,7 +5,7 @@ namespace FuzzPhyte.Utility.Animation
     using UnityEngine.Animations;
     using System.Collections;
     using System;
-    public class FPAnimationInjector : MonoBehaviour
+    public class FPAnimationInjector : MonoBehaviour, IAnimInjection
     {
         [Header("Defaults")]
         [SerializeField] protected float defaultFadeIn = 0.1f;
@@ -62,6 +62,7 @@ namespace FuzzPhyte.Utility.Animation
         }
         #endregion
         #region public accessors
+        #region IAnimInjection Interface
         /// <summary>
         /// Plays a one-shot clip blended over the current Animator output.
         /// </summary>
@@ -90,6 +91,7 @@ namespace FuzzPhyte.Utility.Animation
             abortFadeOut = Mathf.Max(0f, fadeOut);
             abortRequested = true;
         }
+        #endregion
         #endregion
         #region IEnumerators for State/Flow
         protected IEnumerator PlayClipHandoffRoutine(AnimationClip clip,

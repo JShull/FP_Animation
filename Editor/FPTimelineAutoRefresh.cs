@@ -8,6 +8,7 @@ namespace FuzzPhyte.Utility.Animation.Editor
     using UnityEditor.SceneManagement;
     using UnityEngine.Timeline;
 
+    /*
     [InitializeOnLoad]
     public static class FPTimelineAutoRefresh
     {
@@ -120,10 +121,12 @@ namespace FuzzPhyte.Utility.Animation.Editor
                     System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
                 refresh?.Invoke(null, null);
             }
-            catch { /* no-op if API not present */ }
+            catch {  }
         }
+
         #endregion
     }
+          */
 #endif
 }
 
