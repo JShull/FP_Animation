@@ -33,9 +33,9 @@ namespace FuzzPhyte.Utility.Animation
 
                 switch (cmd.command)
                 {
-                    case FPSplineCommand.Pause: follower.Pause(); break;
-                    case FPSplineCommand.Resume: follower.Resume(); break;
-                    case FPSplineCommand.Stop: follower.Stop(); break;
+                    case FPSplineCommand.Pause: follower.Pause(cmd.CommandAnimClip,cmd.ReturnToOriginalClip); break;
+                    case FPSplineCommand.Resume: follower.Resume(cmd.CommandAnimClip, cmd.ReturnToOriginalClip, cmd.StopActiveInjection); break;
+                    case FPSplineCommand.Stop: follower.Stop(cmd.CommandAnimClip,cmd.ReturnToOriginalClip); break;
                     case FPSplineCommand.Unstop: follower.Unstop(); break;
                     case FPSplineCommand.SetSpeedMultiplier: follower.SetSpeedMultiplier(cmd.value); break;
                     case FPSplineCommand.WarpToT: follower.WarpToNormalizedT(cmd.value); break;

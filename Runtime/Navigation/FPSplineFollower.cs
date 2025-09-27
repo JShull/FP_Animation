@@ -10,6 +10,8 @@
         [Header("Path")]
         public SplineContainer TheSpline;
         public Transform TheTarget;
+        [Tooltip("If you're using the command to pass animations")]
+        public Animator TheAnimator;
         [Range(0f, 1f)] public float t = 0f;
         [Tooltip("If true, Timeline drives t via SetNormalizedT. If false, Update() advances t.")]
         public bool TimelineControl;
@@ -18,9 +20,15 @@
         [Tooltip("Multiplier applied when clips drive t; useful for slow/fast motion.")]
         public float SpeedMultiplier = 1f;  // affects Timeline-driven movement
         public float NormalizedSpeedPerSecond = 0.2f; // used only when TimelineControl == false
+        [Space]
+        public bool PingPongSpeed = false;
+        [Range(0,1f)]
+        [SerializeField]protected float pingPongValue = 0.02f;
+        [Space]
         public bool OrientToTangent = true;
         public Vector3 TransformUp = Vector3.up;
-
+        [Tooltip("Set this to true if you want to continue to walk the spline")]
+        public bool LoopSpline = false;
         //Current runtime state
         public bool IsPaused => _paused;
         public bool IsStopped => _stopped;
@@ -28,6 +36,7 @@
         public bool ForcePreviewIgnoreGates { get; set; }
         protected bool _paused;
         protected bool _stopped;
+
 
         public virtual void HotSplineSwap(SplineContainer newContainer, float splineStartValue)
         {
@@ -47,9 +56,21 @@
             }
             // Free-run mode: we own advancing t here.
             if (_stopped || _paused) return;
-
-            t += NormalizedSpeedPerSecond * SpeedMultiplier * Time.deltaTime;
+            float addPingPong = 0;
+            if (PingPongSpeed)
+            {
+                addPingPong = Mathf.PingPong(Time.time, pingPongValue);
+                t += NormalizedSpeedPerSecond * (SpeedMultiplier+addPingPong) * Time.deltaTime;
+            }
+            else
+            {
+                t += NormalizedSpeedPerSecond * SpeedMultiplier * Time.deltaTime;
+            }
             t = Mathf.Clamp01(t); // or Mathf.Repeat for looping
+            if (t >= 1 && LoopSpline)
+            {
+                t = 0;
+            }
             UpdateTransform();
         }
 
@@ -69,13 +90,67 @@
             UpdateTransform();
         }
 
-        public void SetPaused(bool paused) => _paused = paused;
-        public void Pause() => _paused = true;
-        public void Resume() => _paused = false;
-        public void Stop() => _stopped = true;
-        public void Unstop() => _stopped = false;
-        public void SetSpeedMultiplier(float m) => SpeedMultiplier = Mathf.Max(0f, m);
+        public virtual void SetPaused(bool paused) => _paused = paused;
+        public virtual void Pause(AnimationClip clip, bool returnToClip)
+        {
+            _paused = true;
+            if (clip != null) { PassAnimationClip(clip, returnToClip); }
+            
+        }
+        /// <summary>
+        /// If we have a clip were going to use injection to do something
+        /// </summary>
+        /// <param name="clip"></param>
+        /// <param name="returnToClip"></param>
+        /// <param name="stopInjection"></param>
+        public virtual void Resume(AnimationClip clip, bool returnToClip, bool stopInjection)
+        {
+            _paused = false;
+            if(clip!=null && stopInjection == true)
+            {
+                Debug.LogError($"We shouldn't be stopping an injection and passing a clip, just pass the clip (injection will automatically stop old one and start passed one");
+                return;
+            }
+            if (clip != null) 
+            { 
+                PassAnimationClip(clip, returnToClip);
+            }
+            else if(stopInjection)
+            {
+                ResumeAnimationClip();
+            }
+        }
+        public virtual void Stop(AnimationClip clip, bool returnToClip)
+        {
+            _stopped = true;
+            if (clip != null) { PassAnimationClip(clip, returnToClip); }
+        }
+        public virtual void Unstop() => _stopped = false;
+        public virtual void SetSpeedMultiplier(float m) => SpeedMultiplier = Mathf.Max(0f, m);
 
+        protected virtual void PassAnimationClip(AnimationClip clip,bool returnToOriginalClip)
+        {
+            if (TheAnimator != null)
+            {
+                if (TheAnimator.GetComponent<FPAnimationInjector>())
+                {
+                    TheAnimator.GetComponent<FPAnimationInjector>().PlayClip(clip,fadeIn:-1,fadeOut:-1,targetWeight:-1,mask:null,additive:false,speed:1, returnToOriginalClip);
+                }
+            }
+        }
+        /// <summary>
+        /// If we have an FPAnimationInjector and it happens to be active or running somethin
+        /// </summary>
+        protected virtual void ResumeAnimationClip()
+        {
+            if (TheAnimator != null)
+            {
+                if (TheAnimator.GetComponent<FPAnimationInjector>())
+                {
+                    TheAnimator.GetComponent<FPAnimationInjector>().StopActiveInjection();
+                }
+            }
+        }
         protected void UpdateTransform()
         {
             if (TheSpline == null || TheSpline.Spline == null || TheTarget==null) return;

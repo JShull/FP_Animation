@@ -30,7 +30,14 @@ namespace FuzzPhyte.Utility.Animation
         [Space]
         [Tooltip("For NewSpline Command")]
         public int SplineContainerIndex = 0;
-        // Required by INotification; can be any object identity
         public PropertyName id => new PropertyName(nameof(FPSplineCommandMarker));
+
+        [Space]
+        [Tooltip("If you pass an animation clip, and we find an animator, we will inject this")]
+        public AnimationClip CommandAnimClip;
+        [Tooltip("If we want to return to the other clip we are writing over")]
+        public bool ReturnToOriginalClip = false;
+        [Tooltip("If this command wants to stop an injection")]
+        public bool StopActiveInjection;
     }
 }
