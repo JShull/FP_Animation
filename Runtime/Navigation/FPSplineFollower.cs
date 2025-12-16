@@ -26,6 +26,12 @@
         [SerializeField]protected float pingPongValue = 0.02f;
         [Space]
         public bool OrientToTangent = true;
+        [Tooltip("If true, rotate to spline tangent but remove pitch (yaw-only) using TransformUp as the 'up' axis.")]
+        public bool OrientToTangentYawOnly = false;
+        
+        [SerializeField, Tooltip("Used when tangent is nearly vertical and yaw-only forward would be zero.")]
+        protected Vector3 _lastValidYawForward = Vector3.forward;
+
         public Vector3 TransformUp = Vector3.up;
         [Tooltip("Set this to true if you want to continue to walk the spline")]
         public bool LoopSpline = false;
@@ -165,10 +171,32 @@
             {
                 Vector3 localTan = (Vector3)sp.EvaluateTangent(t);
                 Vector3 worldTan = TheSpline.transform.TransformVector(localTan);
+
                 if (worldTan.sqrMagnitude > 1e-6f)
                 {
                     Vector3 worldUp = TheSpline.transform.TransformDirection(TransformUp);
-                    TheTarget.rotation = Quaternion.LookRotation(worldTan, worldUp);
+
+                    Vector3 forward = worldTan;
+
+                    if (OrientToTangentYawOnly)
+                    {
+                        // Remove pitch by flattening the tangent onto the plane defined by 'worldUp'
+                        Vector3 flattened = Vector3.ProjectOnPlane(worldTan, worldUp);
+
+                        if (flattened.sqrMagnitude > 1e-6f)
+                        {
+                            forward = flattened;
+                            _lastValidYawForward = flattened.normalized;
+                        }
+                        else
+                        {
+                            // Tangent is almost parallel to up (e.g., ladder straight up).
+                            // Keep previous yaw forward so rotation doesn't explode / snap.
+                            forward = _lastValidYawForward;
+                        }
+                    }
+
+                    TheTarget.rotation = Quaternion.LookRotation(forward, worldUp);
                 }
             }
         }

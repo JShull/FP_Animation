@@ -35,9 +35,35 @@ namespace FuzzPhyte.Utility.Animation.Editor
                 FPSplineCommand.SetSpeedMultiplier => "d_Animation.AddEvent",
                 FPSplineCommand.SetT => "d_Animation.AddKeyframe",
                 FPSplineCommand.WarpToT => "d_SceneViewOrtho",
-                _ => "d_Profiler.Timeline"
+                _ => null
             };
-            return (Texture2D)EditorGUIUtility.IconContent(name).image;
+            // Prefer your primary mapping, otherwise try reasonable generic fallbacks.
+            return TryGetIcon(
+                name,
+                // generic fallbacks (pick any you like)
+                EditorGUIUtility.isProSkin ? "d_PlayButton On" : "PlayButton On",
+                "PlayButton On",
+                "console.infoicon",
+                "UnityEditor.AnimationWindow" // last-ditch; may vary by version
+            );
+            //return (Texture2D)EditorGUIUtility.IconContent(name).image;
+        }
+        static Texture2D TryGetIcon(params string[] names)
+        {
+            for (int i = 0; i < names.Length; i++)
+            {
+                var n = names[i];
+                if (string.IsNullOrEmpty(n)) continue;
+
+                // FindTexture is “quiet” compared to IconContent (won’t log errors every draw)
+                var tex = EditorGUIUtility.FindTexture(n);
+                if (tex != null) return tex;
+
+                // Some icons are only available via IconContent in some versions—still guard it.
+                var gc = EditorGUIUtility.IconContent(n);
+                if (gc != null && gc.image is Texture2D t2d) return t2d;
+            }
+            return null;
         }
         public override MarkerDrawOptions GetMarkerOptions(IMarker marker)
         {

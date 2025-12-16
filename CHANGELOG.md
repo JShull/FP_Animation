@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-12-16
+
+### 0.2.0 Changed
+
+- [@JShull](https://github.com/jshull).
+  - FPSplineFollower.cs
+    - Support for Yaw Only rotation (no pitch) along a path
+
+### 0.2.0 Fixed
+
+- [@JShull](https://github.com/jshull).
+  - FPSplineCommandMarkerEditor.cs
+    - Fixed missing reference to icon, now just points to null
+
 ## [0.1.0] - 2025-09-20
 
 ### 0.1.0 Added
