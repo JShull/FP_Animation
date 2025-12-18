@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-12-18
+
+### 0.3.0 Changed
+
+- [@JShull](https://github.com/jshull).
+  - FPActivationMarker.cs
+  - FPActivationMarkerDrawer.cs
+  - FPActivationMarkerEditor.cs
+  - FPActivationTimelineScrubDriver.cs
+  - FPActivationReceiver.cs
+    - Support for custom timeline scrubber activation/deactivation marker
+    - Similar to Unity's Activation Track, but marker based
+
 ## [0.2.0] - 2025-12-16
 
 ### 0.2.0 Changed
