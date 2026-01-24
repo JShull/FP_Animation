@@ -1,0 +1,18 @@
+{
+    "name": "com.fuzzphyte.utility.animation.environment",
+    "rootNamespace": "FuzzPhyte.Utility.Animation.Environment",
+    "references": [
+        "com.fuzzphyte.utility",
+        "Unity.RenderPipelines.Core.Runtime",
+        "com.fuzzphyte.utility.fpsystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

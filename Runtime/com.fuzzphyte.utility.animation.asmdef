@@ -6,7 +6,8 @@
         "Unity.Animation.Rigging",
         "Unity.Splines",
         "Unity.Mathematics",
-        "Unity.Timeline"
+        "Unity.Timeline",
+        "Unity.RenderPipelines.Core.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

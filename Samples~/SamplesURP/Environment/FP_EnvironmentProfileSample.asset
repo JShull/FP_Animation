@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a2b1a78d22f51846b89bf401b985231, type: 3}
+  m_Name: FP_EnvironmentProfileSample
+  m_EditorClassIdentifier: com.fuzzphyte.utility.animation.environment::FuzzPhyte.Utility.Animation.Environment.FP_EnvironmentProfile
+  UniqueID: 
+  UseBlendCubemaps: 1
+  SkyCubemap: {fileID: 8900000, guid: 99155f24f5aacb049bfe8193892609be, type: 3}
+  SkyboxMaterial: {fileID: 2100000, guid: e8ed28c17dcc6b044adad300d9b90cbc, type: 2}
+  AmbientMode: 0
+  AmbientSkyColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  AmbientEquatorColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  AmbientGroundColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  AmbientIntensity: 1
+  DefaultReflectionMode: 0
+  CustomReflectionCubemap: {fileID: 0}
+  ReflectionIntensity: 1
+  ReflectionBounces: 1
+  UseFog: 0
+  FogMode: 3
+  FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  FogDensity: 0.01
+  FogStartDistance: 0
+  FogEndDistance: 300
+  KeyLight:
+    Name: FP_KeyLight
+    Type: 1
+    Color: {r: 1, g: 0.97971696, b: 0.7971698, a: 1}
+    Intensity: 1
+    Shadows: 2
+    Position: {x: 0, y: 0, z: 0}
+    EulerAngles: {x: 50, y: -30, z: 0}
+    Range: 10
+    SpotAngle: 30
+    Enabled: 1
+  AdditionalLights:
+  - Name: FP_Spot
+    Type: 2
+    Color: {r: 0.9411765, g: 0.9019608, b: 0.5490196, a: 1}
+    Intensity: 4
+    Shadows: 0
+    Position: {x: 0, y: 10, z: 0}
+    EulerAngles: {x: 0, y: 0, z: 0}
+    Range: 15
+    SpotAngle: 0
+    Enabled: 1
+  VolumeProfile: {fileID: 11400000, guid: 63f6c519981402843a0e55aa0cbad5c7, type: 2}
+  VolumeWeight: 1

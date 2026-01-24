@@ -1,6 +1,6 @@
 {
     "name": "com.fuzzphyte.utility.animation",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "displayName": "FP Animation",
     "description": "FP Utility Animation is a collection of useful utilities for Unity animation, IK, rigging, and timeline",
     "unity": "6000.3",

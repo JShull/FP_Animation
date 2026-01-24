@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-01-23
+
+### 0.4.0 Added
+
+- [@JShull](https://github.com/jshull).
+  - FP_EnvironmentBinder
+  - FP_EnvironmentProfile
+  - FP_EnvironmentSystem
+  - FP_EnvironmentSystemData
+  - FP_SkyboxBlender
+  - Supporting a URP at runtime skybox blending system between two cubemap skyboxes
+  
 ## [0.3.0] - 2025-12-18
 
 ### 0.3.0 Changed
