@@ -199,14 +199,17 @@
                     desiredWeight = 0f;
                 }
                 float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
-                _headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, desiredWeight, alpha);
-
+                //_headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, desiredWeight, alpha);
+                if (desiredWeight < 0.01f)
+                {
+                    _headWeightSmoothed = 0f;
+                }
+                else
+                {
+                    _headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, desiredWeight, alpha);
+                }
                 ApplyDistributedHeadIK(_headWeightSmoothed);
-                //float w = 0;
-                //w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1);
-
-                //ApplyDistributedHeadIK(w);
-                //HeadAimConstraint.weight = w;
+                
             }
             if(UseRightHandIK && RightArmConstraint != null)
             {
@@ -262,13 +265,39 @@
             float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
             _bodyAssistSmoothed = Mathf.Lerp(_bodyAssistSmoothed, bodyAssistTarget, alpha);
             float bodyAssist = _bodyAssistSmoothed;
-           
-            // Apply distributed weights (these are fine)
-            if (HeadAimConstraint != null) HeadAimConstraint.weight = headBaseWeight;
-            if (NeckAimConstraint != null) NeckAimConstraint.weight = headBaseWeight * NeckWeightMultiplier * bodyAssist;
-            if (ChestAimConstraint != null) ChestAimConstraint.weight = headBaseWeight * ChestWeightMultiplier * bodyAssist;
-            if (SpineAimConstraint != null) SpineAimConstraint.weight = headBaseWeight * SpineWeightMultiplier * bodyAssist;
 
+            // Apply distributed weights (these are fine)
+            //if (HeadAimConstraint != null) HeadAimConstraint.weight = headBaseWeight;
+            //if (NeckAimConstraint != null) NeckAimConstraint.weight = headBaseWeight * NeckWeightMultiplier * bodyAssist;
+            //if (ChestAimConstraint != null) ChestAimConstraint.weight = headBaseWeight * ChestWeightMultiplier * bodyAssist;
+            //if (SpineAimConstraint != null) SpineAimConstraint.weight = headBaseWeight * SpineWeightMultiplier * bodyAssist;
+            const float epsilon = 0.01f;
+
+            bool enable = headBaseWeight > epsilon;
+
+            if (HeadAimConstraint != null)
+            {
+                HeadAimConstraint.enabled = enable;
+                HeadAimConstraint.weight = enable ? headBaseWeight : 0f;
+            }
+
+            if (NeckAimConstraint != null)
+            {
+                NeckAimConstraint.enabled = enable;
+                NeckAimConstraint.weight = enable ? headBaseWeight * NeckWeightMultiplier * bodyAssist : 0f;
+            }
+
+            if (ChestAimConstraint != null)
+            {
+                ChestAimConstraint.enabled = enable;
+                ChestAimConstraint.weight = enable ? headBaseWeight * ChestWeightMultiplier * bodyAssist : 0f;
+            }
+
+            if (SpineAimConstraint != null)
+            {
+                SpineAimConstraint.enabled = enable;
+                SpineAimConstraint.weight = enable ? headBaseWeight * SpineWeightMultiplier * bodyAssist : 0f;
+            }
             Vector3 flatToTarget = Vector3.ProjectOnPlane(
                 TrackingLookAtPosition.position - transform.position,
                 Vector3.up
@@ -526,6 +555,7 @@
 
             // --- Smooth ---
             float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
+            
             _headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, target, alpha);
 
             return _headWeightSmoothed;
