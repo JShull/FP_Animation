@@ -11,7 +11,7 @@
         [Header("General IK Setting")]
         public HeadIKProvider IKProvider = HeadIKProvider.AnimatorIK;
         public bool MaintainOffset = true;
-        public bool UseNewIKHeadFunction = false;
+        //public bool UseNewIKHeadFunction = false;
         public bool IKBooleanGate = false;
 
         [Range(-1f, 1f)]
@@ -76,8 +76,21 @@
         [SerializeField]
         protected float measuredWeight;
 
-        //rig based
+        // rig based
         public MultiAimConstraint HeadAimConstraint;
+        // core/rig based
+        // rig based
+        public MultiAimConstraint NeckAimConstraint;
+        public MultiAimConstraint ChestAimConstraint;
+        public MultiAimConstraint SpineAimConstraint;
+        //
+        [Header("Body Distributions")]
+        [Range(0f, 1f)] public float SpineWeightMultiplier = 0.35f;
+        [Range(0f, 1f)] public float ChestWeightMultiplier = 0.6f;
+        [Range(0f, 1f)] public float NeckWeightMultiplier = 0.8f;
+        public float BodyAssistStartAngle = 15f;
+        public float BodyAssistFullAngle = 60f;
+        //
         public TwoBoneIKConstraint RightArmConstraint;
         public TwoBoneIKConstraint LeftArmConstraint;
         #region Gizmo Parameters
@@ -94,8 +107,15 @@
         public Color LeftHandTargetColor;
         public Color HeadTargetColor = Color.aliceBlue;
         public int ConeSegments = 16;
+        [Header("Body Aim Gizmo Colors")]
+        public Color SpineColor = new Color(0.2f, 0.6f, 1f, 0.8f);
+        public Color ChestColor = new Color(0.4f, 1f, 0.6f, 0.8f);
+        public Color NeckColor = new Color(1f, 0.8f, 0.2f, 0.8f);
+        public Color HeadColor = new Color(1f, 0.2f, 0.2f, 0.9f);
+
+        public float AimRayLength = 0.5f;
         #endregion
-        
+
         protected float _lastConeHeight, _lastMaxAngleDropoff, _lastMinAngleFullTracking, _headWeightSmoothed, _handWeightSmoothed;
         protected int _lastConeSegments;
         protected Vector3 leftHandPos;
@@ -118,7 +138,7 @@
                 //head setup
                 if (UseHeadIK)
                 {
-                    EnsureHeadAimSetupRigging();
+                    EnsureDistributedHeadRigging();
                 }
                 //debugging?
                 if (UseLeftHandIK && ShowLeftHandGizmo)
@@ -162,6 +182,8 @@
             if (UseHeadIK || HeadAimConstraint != null)
             {
                 float w = 0;
+                w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1);
+                /*
                 if (UseNewIKHeadFunction)
                 {
                     w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1);
@@ -170,8 +192,9 @@
                 {
                     w = ComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: HeadAimConstraint.weight);
                 }
-                   
-                HeadAimConstraint.weight = w;
+                */
+                ApplyDistributedHeadIK(w);
+                //HeadAimConstraint.weight = w;
             }
             if(UseRightHandIK && RightArmConstraint != null)
             {
@@ -214,6 +237,51 @@
             }
         }
 
+        protected virtual void ApplyDistributedHeadIK(float headBaseWeight)
+        {
+            if (TrackingLookAtPosition == null || RelativePivotPos == null)
+                return;
+
+            Vector3 toTarget = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
+            float angle = Vector3.Angle(RelativePivotPos.forward, toTarget);
+
+            // Body assist factor based on angle
+            float bodyAssist = Mathf.InverseLerp(
+                BodyAssistStartAngle,
+                BodyAssistFullAngle,
+                angle);
+
+            bodyAssist = Mathf.Clamp01(bodyAssist);
+
+            // Head always gets full weight
+            if (HeadAimConstraint != null)
+                HeadAimConstraint.weight = headBaseWeight;
+
+            // Neck light assist
+            if (NeckAimConstraint != null)
+                NeckAimConstraint.weight = headBaseWeight * NeckWeightMultiplier * bodyAssist;
+
+            // Chest medium assist
+            if (ChestAimConstraint != null)
+                ChestAimConstraint.weight = headBaseWeight * ChestWeightMultiplier * bodyAssist;
+
+            // Spine subtle assist
+            if (SpineAimConstraint != null)
+                SpineAimConstraint.weight = headBaseWeight * SpineWeightMultiplier * bodyAssist;
+
+            if (angle > MaxAngleDropoff)
+            {
+                Vector3 flatDir = Vector3.ProjectOnPlane(
+                    TrackingLookAtPosition.position - transform.position,
+                    Vector3.up);
+
+                Quaternion targetRot = Quaternion.LookRotation(flatDir);
+                transform.rotation = Quaternion.Slerp(
+                    transform.rotation,
+                    targetRot,
+                    Time.deltaTime * 2f);
+            }
+        }
         #endregion
         protected virtual void CheckHandIK(int layerIndex, AvatarIKGoal goal,Transform target, Transform hint, float weightScale)
         {
@@ -445,8 +513,14 @@
         /// <summary>
         /// For rigging purposes
         /// </summary>
-        protected virtual void EnsureHeadAimSetupRigging()
+        protected virtual void EnsureDistributedHeadRigging()
         {
+            SetupAimConstraint(HeadAimConstraint, MaxAngleDropoff);
+            SetupAimConstraint(NeckAimConstraint, MaxAngleDropoff * 0.8f);
+            SetupAimConstraint(ChestAimConstraint, MaxAngleDropoff * 0.6f);
+            SetupAimConstraint(SpineAimConstraint, MaxAngleDropoff * 0.4f);
+            //OLD
+            /*
             if (HeadAimConstraint == null || TrackingLookAtPosition==null) return;
 
             // Get and edit the constraint's data (struct)
@@ -476,7 +550,36 @@
             data.maintainOffset = MaintainOffset;   // or expose as a serialized toggle
 
             HeadAimConstraint.data = data; // <- push modified struct back
-            
+            */
+        }
+
+        /// <summary>
+        /// Helper function for multi aim constraint
+        /// </summary>
+        /// <param name="constraint"></param>
+        /// <param name="limit"></param>
+        protected void SetupAimConstraint(MultiAimConstraint constraint, float limit)
+        {
+            if (constraint == null || TrackingLookAtPosition == null)
+                return;
+
+            var data = constraint.data;
+
+            var sources = data.sourceObjects;
+            sources.Clear();
+            sources.Add(new WeightedTransform(TrackingLookAtPosition, 1f));
+            data.sourceObjects = sources;
+
+            if (HipRelativeForward != null)
+            {
+                data.worldUpType = MultiAimConstraintData.WorldUpType.ObjectRotationUp;
+                data.worldUpObject = HipRelativeForward;
+            }
+
+            data.limits = new Vector2(-limit, limit);
+            data.maintainOffset = MaintainOffset;
+
+            constraint.data = data;
         }
         protected virtual void EnsureHandSetupRigging()
         {
@@ -526,6 +629,23 @@
                     Gizmos.color = InteriorConeColor;
                     Gizmos.DrawMesh(interiorConeMesh, RelativePivotPos.position, Quaternion.LookRotation(RelativePivotPos.forward));
                 }
+                if(IKProvider == HeadIKProvider.AnimationRigging)
+                {
+                    DrawAimConstraintGizmo(HeadAimConstraint, HeadColor);
+                    DrawAimConstraintGizmo(NeckAimConstraint, NeckColor);
+                    DrawAimConstraintGizmo(ChestAimConstraint, ChestColor);
+                    DrawAimConstraintGizmo(SpineAimConstraint, SpineColor);
+                }
+                Vector3 toTarget = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
+                float angle = Vector3.Angle(RelativePivotPos.forward, toTarget);
+
+
+        #if UNITY_EDITOR
+                UnityEditor.Handles.color = Color.white;
+                UnityEditor.Handles.Label(
+                    RelativePivotPos.position + Vector3.up * 0.2f,
+                    $"Angle: {angle:F1}");
+        #endif
                 if (distanceToTarget > hypotenuse)
                 {
                     return;
@@ -606,6 +726,39 @@
             _lastMaxAngleDropoff = MaxAngleDropoff;
             _lastConeSegments = ConeSegments;
             _lastMinAngleFullTracking = MinAngleFullTracking;
+        }
+        protected void DrawAimConstraintGizmo(MultiAimConstraint constraint, Color baseColor)
+        {
+            if (constraint == null || constraint.data.constrainedObject == null)
+                return;
+
+            Transform bone = constraint.data.constrainedObject;
+
+            float w = constraint.weight;
+            if (w <= 0.001f)
+                return;
+
+            // Fade color based on weight
+            Color c = baseColor;
+            c.a *= w;
+
+            Gizmos.color = c;
+
+            // Draw forward direction
+            Gizmos.DrawLine(
+                bone.position,
+                bone.position + bone.forward * AimRayLength);
+
+            // Draw line to target
+            if (TrackingLookAtPosition != null)
+            {
+                Gizmos.DrawLine(
+                    bone.position,
+                    TrackingLookAtPosition.position);
+            }
+
+            // Draw small sphere at bone
+            Gizmos.DrawWireSphere(bone.position, 0.03f + (0.05f * w));
         }
         #endregion
     }

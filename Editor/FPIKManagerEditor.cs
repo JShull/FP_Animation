@@ -7,7 +7,7 @@ namespace FuzzPhyte.Utility.Animation.Editor
     [CustomEditor(typeof(FuzzPhyte.Utility.Animation.FPIKManager))]
     public class FPIKManagerEditor:Editor
     {
-        private SerializedProperty ikActive,useNewIkHeadFunction,useIkbooleanGate;
+        private SerializedProperty ikActive,useIkbooleanGate;
         private SerializedProperty ikAnimator;
         private SerializedProperty hipRelativeForward;
         private SerializedProperty gizmoActive;
@@ -24,18 +24,21 @@ namespace FuzzPhyte.Utility.Animation.Editor
 
         // Head IK properties
         private SerializedProperty useHeadIK;
-        private SerializedProperty headAimConstraint;
+        private SerializedProperty headAimConstraint, neckAimConstraint,chestAimConstraint,spineAimConstraint;
         private SerializedProperty maintainOffset, handRTOffsetPOS, handRTOffsetROT, handLFTOffsetPOS,handLFTOffsetROT;
         private SerializedProperty trackingLookAtPosition, relativePivotPos;
         private SerializedProperty maxAngleDropoff, minAngleFullTracking, headIKSpeed;
         private SerializedProperty showLargeConeGizmo, showInteriorConeGizmo;
         private SerializedProperty showRightHandGizmo, showLeftHandGizmo;
 
+        // Body IK Properties
+        private SerializedProperty spineWeightMultiplier, chestWeightMultiplier, neckWeightMultiplier, bodyAssistStartAngle, bodyAssistFullAngle;
+        
         private void OnEnable()
         {
             // General IK settings
             ikActive = serializedObject.FindProperty("IKActive");
-            useNewIkHeadFunction = serializedObject.FindProperty("UseNewIKHeadFunction");
+            //useNewIkHeadFunction = serializedObject.FindProperty("UseNewIKHeadFunction");
             useIkbooleanGate = serializedObject.FindProperty("IKBooleanGate");
             ikAnimator = serializedObject.FindProperty("IKAnimator");
             hipRelativeForward = serializedObject.FindProperty("HipRelativeForward");
@@ -76,6 +79,16 @@ namespace FuzzPhyte.Utility.Animation.Editor
             relativePivotPos = serializedObject.FindProperty("RelativePivotPos");
             maxAngleDropoff = serializedObject.FindProperty("MaxAngleDropoff");
             minAngleFullTracking = serializedObject.FindProperty("MinAngleFullTracking");
+
+            // Body IK
+            spineWeightMultiplier = serializedObject.FindProperty("SpineWeightMultiplier");
+            chestWeightMultiplier = serializedObject.FindProperty("ChestWeightMultiplier");
+            neckWeightMultiplier = serializedObject.FindProperty("NeckWeightMultiplier");
+            bodyAssistStartAngle = serializedObject.FindProperty("BodyAssistStartAngle");
+            bodyAssistFullAngle = serializedObject.FindProperty("BodyAssistFullAngle");
+            neckAimConstraint = serializedObject.FindProperty("NeckAimConstraint");
+            chestAimConstraint = serializedObject.FindProperty("ChestAimConstraint");
+            spineAimConstraint = serializedObject.FindProperty("SpineAimConstraint");
             
         }
 
@@ -88,7 +101,7 @@ namespace FuzzPhyte.Utility.Animation.Editor
             
             if (ikActive.boolValue)
             {
-                EditorGUILayout.PropertyField(useNewIkHeadFunction);
+                //EditorGUILayout.PropertyField(useNewIkHeadFunction);
                 EditorGUILayout.PropertyField(useIkbooleanGate);
                 EditorGUILayout.PropertyField(ikAnimator);
                 EditorGUILayout.PropertyField(hipRelativeForward);
@@ -167,16 +180,26 @@ namespace FuzzPhyte.Utility.Animation.Editor
 
                     // Head IK
                 EditorGUILayout.Space();
-                EditorGUILayout.LabelField("Head IK Settings", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField("Head & Body IK Settings", EditorStyles.boldLabel);
                 EditorGUILayout.PropertyField(useHeadIK);
 
                 if (useHeadIK.boolValue)
                 {
                     if((HeadIKProvider)headIKMode.enumValueIndex == HeadIKProvider.AnimationRigging)
                     {
-                        EditorGUILayout.PropertyField(headAimConstraint);
                         EditorGUILayout.PropertyField(maintainOffset);
+                        EditorGUILayout.PropertyField(headAimConstraint);
+                        EditorGUILayout.PropertyField(neckAimConstraint);
+                        EditorGUILayout.PropertyField(neckWeightMultiplier);
+                        EditorGUILayout.PropertyField(chestAimConstraint);
+                        EditorGUILayout.PropertyField(chestWeightMultiplier);
+                        EditorGUILayout.PropertyField(spineAimConstraint);
+                        EditorGUILayout.PropertyField(spineWeightMultiplier);
+
                     }
+                    EditorGUILayout.Space();
+                    EditorGUILayout.PropertyField(bodyAssistStartAngle);
+                    EditorGUILayout.PropertyField(bodyAssistFullAngle);
                     EditorGUILayout.PropertyField(gizmoActive);
                     if (gizmoActive.boolValue)
                     {
