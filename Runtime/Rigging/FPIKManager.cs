@@ -187,16 +187,7 @@
             {
                 float w = 0;
                 w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1);
-                /*
-                if (UseNewIKHeadFunction)
-                {
-                    w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1);
-                }
-                else
-                {
-                    w = ComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: HeadAimConstraint.weight);
-                }
-                */
+               
                 ApplyDistributedHeadIK(w);
                 //HeadAimConstraint.weight = w;
             }
@@ -645,7 +636,8 @@
             }
             */
             data.worldUpType = MultiAimConstraintData.WorldUpType.SceneUp;
-            data.limits = new Vector2(-limit, limit);
+            //JOHN
+            //data.limits = new Vector2(-limit, limit);
             data.maintainOffset = MaintainOffset;
 
             constraint.data = data;
