@@ -320,7 +320,7 @@
             {
                 float dir = Mathf.Sign(signedYaw);
                 float step = RootTurnSpeedDeg * Time.deltaTime;
-                transform.Rotate(Vector3.up, dir * step, Space.World);
+                //transform.Rotate(Vector3.up, dir * step, Space.World);
             }
         }
         
