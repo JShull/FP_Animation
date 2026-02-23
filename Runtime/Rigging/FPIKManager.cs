@@ -7,11 +7,10 @@
 
     public class FPIKManager : MonoBehaviour
     {
-        [SerializeField] protected float handDist = 0;
         [Header("General IK Setting")]
         public HeadIKProvider IKProvider = HeadIKProvider.AnimatorIK;
         public bool MaintainOffset = true;
-        //public bool UseNewIKHeadFunction = false;
+
         public bool IKBooleanGate = false;
 
         [Range(-1f, 1f)]
@@ -68,17 +67,16 @@
         public float HeadIKSpeed = 50;
         [Tooltip("Layer of the Animator we want")]
         public int AnimatorLayer = 1;
-        protected Quaternion initialLocalBoneRotation;
-        protected float distanceToTarget;
-        protected float hypotenuse;
+        // Quaternion initialLocalBoneRotation;
+        protected float legacyDistanceToTarget;
+        protected float legacyHypotenuse;
         [Tooltip("Max Distance before character stops looking")]
         public float ConeHeight = 5f;
         [SerializeField]
-        protected float measuredWeight;
+        protected float legacyMeasuredWeight;
 
         // rig based
         public MultiAimConstraint HeadAimConstraint;
-        // core/rig based
         // rig based
         public MultiAimConstraint NeckAimConstraint;
         public MultiAimConstraint ChestAimConstraint;
@@ -124,6 +122,9 @@
         [SerializeField] private float RootTurnOnAngle = 75f;   // turn ON when beyond this
         [SerializeField] private float RootTurnOffAngle = 55f;  // turn OFF when below this
         [SerializeField] private float _bodyAssistSmoothed;
+        [SerializeField] private float HeadEngageAngle = 70f;
+        [SerializeField] private float HeadDisengageAngle = 85f;
+        private bool _headActive;
         private bool _rootTurning;
         #region Unity Functions
         protected virtual void Start()
@@ -186,10 +187,25 @@
             }
             if (UseHeadIK && HeadAimConstraint != null)
             {
-                float w = 0;
-                w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1);
-               
-                ApplyDistributedHeadIK(w);
+                float absYaw;
+                bool valid = IsTargetWithinHeadBounds(out absYaw);
+                float desiredWeight = 0f;
+                if (valid)
+                {
+                    desiredWeight = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1f);
+                }
+                else
+                {
+                    desiredWeight = 0f;
+                }
+                float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
+                _headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, desiredWeight, alpha);
+
+                ApplyDistributedHeadIK(_headWeightSmoothed);
+                //float w = 0;
+                //w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1);
+
+                //ApplyDistributedHeadIK(w);
                 //HeadAimConstraint.weight = w;
             }
             if(UseRightHandIK && RightArmConstraint != null)
@@ -236,10 +252,6 @@
         {
             if (TrackingLookAtPosition == null || RelativePivotPos == null)
                 return;
-
-            // --------------------------------------------------------------------
-            // A) Bone-based angle (for distribution weights) - OK to use pivot forward
-            // --------------------------------------------------------------------
             Vector3 toTargetFromPivot = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
             float lookAngle = Vector3.Angle(RelativePivotPos.forward, toTargetFromPivot);
 
@@ -250,17 +262,13 @@
             float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
             _bodyAssistSmoothed = Mathf.Lerp(_bodyAssistSmoothed, bodyAssistTarget, alpha);
             float bodyAssist = _bodyAssistSmoothed;
-            //bodyAssist = Mathf.Clamp01(bodyAssist);
-
+           
             // Apply distributed weights (these are fine)
             if (HeadAimConstraint != null) HeadAimConstraint.weight = headBaseWeight;
             if (NeckAimConstraint != null) NeckAimConstraint.weight = headBaseWeight * NeckWeightMultiplier * bodyAssist;
             if (ChestAimConstraint != null) ChestAimConstraint.weight = headBaseWeight * ChestWeightMultiplier * bodyAssist;
             if (SpineAimConstraint != null) SpineAimConstraint.weight = headBaseWeight * SpineWeightMultiplier * bodyAssist;
 
-            // --------------------------------------------------------------------
-            // B) Root yaw-only angle (for turning) - MUST be computed in world-flat space
-            // --------------------------------------------------------------------
             Vector3 flatToTarget = Vector3.ProjectOnPlane(
                 TrackingLookAtPosition.position - transform.position,
                 Vector3.up
@@ -275,18 +283,10 @@
 
             float signedYaw = Vector3.SignedAngle(flatForward, flatToTarget, Vector3.up);
             float absYaw = Mathf.Abs(signedYaw);
-
-            // --------------------------------------------------------------------
-            // C) Hysteresis gate to prevent threshold buzzing
-            // --------------------------------------------------------------------
             if (!_rootTurning && absYaw >= RootTurnOnAngle)
                 _rootTurning = true;
             else if (_rootTurning && absYaw <= RootTurnOffAngle)
                 _rootTurning = false;
-
-            // --------------------------------------------------------------------
-            // D) Root turning (stable, deterministic)
-            // --------------------------------------------------------------------
             if (_rootTurning)
             {
                 float dir = Mathf.Sign(signedYaw);
@@ -294,53 +294,7 @@
                 transform.Rotate(Vector3.up, dir * step, Space.World);
             }
         }
-        /*
-        protected virtual void ApplyDistributedHeadIK(float headBaseWeight)
-        {
-            if (TrackingLookAtPosition == null || RelativePivotPos == null)
-                return;
-
-            Vector3 toTarget = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
-            float angle = Vector3.Angle(RelativePivotPos.forward, toTarget);
-
-            // Body assist factor based on angle
-            float bodyAssist = Mathf.InverseLerp(
-                BodyAssistStartAngle,
-                BodyAssistFullAngle,
-                angle);
-
-            bodyAssist = Mathf.Clamp01(bodyAssist);
-
-            // Head always gets full weight
-            if (HeadAimConstraint != null)
-                HeadAimConstraint.weight = headBaseWeight;
-
-            // Neck light assist
-            if (NeckAimConstraint != null)
-                NeckAimConstraint.weight = headBaseWeight * NeckWeightMultiplier * bodyAssist;
-
-            // Chest medium assist
-            if (ChestAimConstraint != null)
-                ChestAimConstraint.weight = headBaseWeight * ChestWeightMultiplier * bodyAssist;
-
-            // Spine subtle assist
-            if (SpineAimConstraint != null)
-                SpineAimConstraint.weight = headBaseWeight * SpineWeightMultiplier * bodyAssist;
-
-            if (angle > MaxAngleDropoff)
-            {
-                Vector3 flatDir = Vector3.ProjectOnPlane(
-                    TrackingLookAtPosition.position - transform.position,
-                    Vector3.up);
-
-                Quaternion targetRot = Quaternion.LookRotation(flatDir);
-                transform.rotation = Quaternion.Slerp(
-                    transform.rotation,
-                    targetRot,
-                    Time.deltaTime * 2f);
-            }
-        }
-        */
+        
         #endregion
         protected virtual void CheckHandIK(int layerIndex, AvatarIKGoal goal,Transform target, Transform hint, float weightScale)
         {
@@ -390,7 +344,7 @@
         }
         protected virtual float ComputeHandIK(TwoBoneIKConstraint constraint, Transform target, Transform hint, float weightScale, bool rightHand=false)
         {
-            handDist = Vector3.Distance(constraint.data.tip.position, target.position);
+            var handDist = Vector3.Distance(constraint.data.tip.position, target.position);
             if(handDist <= ReachProximityMax)
             {
                 var normalizedHandWeight = 1f - Mathf.InverseLerp(0, ReachProximityMax, handDist);
@@ -489,15 +443,16 @@
         /// <param name="layerIndex"></param>
         protected virtual void ApplyHeadIKLook(int layerIndex)
         {
-            measuredWeight = ComputeHeadWeight(true);
-            IKAnimator.SetLookAtWeight(measuredWeight);
+            legacyMeasuredWeight = NewComputeHeadWeight(true);
+            IKAnimator.SetLookAtWeight(legacyMeasuredWeight);
 
-            if (measuredWeight > 0f)
+            if (legacyMeasuredWeight > 0f)
             {
                 IKAnimator.SetLookAtPosition(TrackingLookAtPosition.position);
             }
         }
 
+        /*
         /// <summary>
         /// Logic on just HeadLook Weight for IK
         /// </summary>
@@ -505,9 +460,9 @@
         protected virtual float ComputeHeadWeight(bool useAnimatorIK = true, float externalGate=1f)
         {
             // 1) Distance factor
-            distanceToTarget = Vector3.Distance(RelativePivotPos.position, TrackingLookAtPosition.position);
-            hypotenuse = ConeHeight / Mathf.Sin((180 - (90 + MaxAngleDropoff)) * Mathf.Deg2Rad) * Mathf.Sin(90 * Mathf.Deg2Rad);
-            var distanceFactor = Mathf.Clamp01(Mathf.InverseLerp(0f, hypotenuse, hypotenuse - distanceToTarget));
+            legacyDistanceToTarget = Vector3.Distance(RelativePivotPos.position, TrackingLookAtPosition.position);
+            legacyHypotenuse = ConeHeight / Mathf.Sin((180 - (90 + MaxAngleDropoff)) * Mathf.Deg2Rad) * Mathf.Sin(90 * Mathf.Deg2Rad);
+            var distanceFactor = Mathf.Clamp01(Mathf.InverseLerp(0f, legacyHypotenuse, legacyHypotenuse - legacyDistanceToTarget));
 
             // 2) Angular factor
             Vector3 toTarget = TrackingLookAtPosition.position - RelativePivotPos.position;
@@ -528,9 +483,10 @@
             float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime); // smooth factor
             _headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, target, alpha);
 
-            measuredWeight = _headWeightSmoothed;
-            return measuredWeight;
+            legacyMeasuredWeight = _headWeightSmoothed;
+            return legacyMeasuredWeight;
         }
+        */
 
         /// new IK Update
         protected virtual float NewComputeHeadWeight(bool useAnimatorIK = true, float externalGate = 1f)
@@ -584,38 +540,7 @@
             SetupAimConstraint(NeckAimConstraint, MaxAngleDropoff * 0.8f);
             SetupAimConstraint(ChestAimConstraint, MaxAngleDropoff * 0.6f);
             SetupAimConstraint(SpineAimConstraint, MaxAngleDropoff * 0.4f);
-            //OLD
-            /*
-            if (HeadAimConstraint == null || TrackingLookAtPosition==null) return;
-
-            // Get and edit the constraint's data (struct)
-            var data = HeadAimConstraint.data;
-
-            // Use your existing target as the single source
-            var sources = data.sourceObjects;                 // WeightedTransformArray
-            bool needsRewire =
-                sources.Count != 1 ||
-                sources[0].transform != TrackingLookAtPosition ||
-                sources[0].weight != 1f;
-
-            if (needsRewire)
-            {
-                sources.Clear();
-                sources.Add(new WeightedTransform(TrackingLookAtPosition, 1f));
-                data.sourceObjects = sources;                 // assign back to data
-            }
-            //stablize roll with up
-            if (HipRelativeForward != null)
-            {
-                data.worldUpType = MultiAimConstraintData.WorldUpType.ObjectRotationUp;
-                data.worldUpObject = HipRelativeForward;
-            }
-            data.limits = new Vector2(-1* MaxAngleDropoff, MaxAngleDropoff);
-            // Optional: preserve current pose when enabling the constraint
-            data.maintainOffset = MaintainOffset;   // or expose as a serialized toggle
-
-            HeadAimConstraint.data = data; // <- push modified struct back
-            */
+           
         }
 
         /// <summary>
@@ -675,8 +600,41 @@
                 LeftArmConstraint.data = leftHandData;
             }
         }
+        protected bool IsTargetWithinHeadBounds(out float absYaw)
+        {
+            absYaw = 0f;
+
+            if (TrackingLookAtPosition == null)
+                return false;
+
+            // Distance gate
+            float dist = Vector3.Distance(transform.position, TrackingLookAtPosition.position);
+            if (dist > ConeHeight)
+                return false;
+
+            // Horizontal yaw gate
+            Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            Vector3 flatToTarget = Vector3.ProjectOnPlane(
+                TrackingLookAtPosition.position - transform.position,
+                Vector3.up).normalized;
+
+            if (flatToTarget.sqrMagnitude < 0.0001f)
+                return false;
+
+            float signedYaw = Vector3.SignedAngle(flatForward, flatToTarget, Vector3.up);
+            absYaw = Mathf.Abs(signedYaw);
+
+            // HARD cutoff
+            if (!_headActive && absYaw <= HeadEngageAngle)
+                _headActive = true;
+            else if (_headActive && absYaw >= HeadDisengageAngle)
+                _headActive = false;
+
+            return _headActive;
+
+        }
         #region Gizmos & Visualizations
-       
+
         protected virtual void OnDrawGizmos()
         {
             if (ShowHeadIKGizmo && ConeSegments > 1 && RelativePivotPos!=null && TrackingLookAtPosition!=null)
@@ -714,7 +672,7 @@
                     RelativePivotPos.position + Vector3.up * 0.2f,
                     $"Angle: {angle:F1}");
         #endif
-                if (distanceToTarget > hypotenuse)
+                if (legacyDistanceToTarget > legacyHypotenuse)
                 {
                     return;
                 }
