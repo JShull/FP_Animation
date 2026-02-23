@@ -637,7 +637,7 @@
             */
             data.worldUpType = MultiAimConstraintData.WorldUpType.SceneUp;
             //JOHN
-            //data.limits = new Vector2(-limit, limit);
+            data.limits = new Vector2(-120f,120f);
             data.maintainOffset = MaintainOffset;
 
             constraint.data = data;
