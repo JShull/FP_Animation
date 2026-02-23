@@ -164,7 +164,7 @@
                 float w = 0;
                 if (UseNewIKHeadFunction)
                 {
-                    w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: HeadAimConstraint.weight);
+                    w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1);
                 }
                 else
                 {
