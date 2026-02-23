@@ -11,6 +11,9 @@
         [Header("General IK Setting")]
         public HeadIKProvider IKProvider = HeadIKProvider.AnimatorIK;
         public bool MaintainOffset = true;
+        public bool UseNewIKHeadFunction = false;
+        public bool IKBooleanGate = false;
+
         [Range(-1f, 1f)]
         public float IKScaleWeight = 1;
         public bool IKActive = false;
@@ -158,7 +161,16 @@
             }
             if (UseHeadIK || HeadAimConstraint != null)
             {
-                var w = ComputeHeadWeight(useAnimatorIK: false, externalGate: HeadAimConstraint.weight);
+                float w = 0;
+                if (UseNewIKHeadFunction)
+                {
+                    w = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: HeadAimConstraint.weight);
+                }
+                else
+                {
+                    w = ComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: HeadAimConstraint.weight);
+                }
+                   
                 HeadAimConstraint.weight = w;
             }
             if(UseRightHandIK && RightArmConstraint != null)
@@ -392,7 +404,44 @@
             measuredWeight = _headWeightSmoothed;
             return measuredWeight;
         }
-        
+
+        /// new IK Update
+        protected virtual float NewComputeHeadWeight(bool useAnimatorIK = true, float externalGate = 1f)
+        {
+            // --- Distance ---
+            float distanceToTarget = Vector3.Distance(
+                RelativePivotPos.position,
+                TrackingLookAtPosition.position);
+
+            float distanceFactor = 1f - Mathf.InverseLerp(0f, ConeHeight, distanceToTarget);
+            distanceFactor = Mathf.Clamp01(distanceFactor);
+
+            // --- Angle ---
+            Vector3 toTarget = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
+            float angle = Vector3.Angle(RelativePivotPos.forward, toTarget);
+
+            float angularFactor = 1f - Mathf.InverseLerp(
+                MinAngleFullTracking,
+                MaxAngleDropoff,
+                angle);
+
+            angularFactor = Mathf.Clamp01(angularFactor);
+
+            // --- Gate ---
+            float gate = useAnimatorIK
+                ? (IKAnimator != null ? IKAnimator.GetLayerWeight(AnimatorLayer) : 1f)
+                : Mathf.Clamp01(externalGate);
+
+            // --- Combine (MULTIPLY, not average) ---
+            float target = gate * IKScaleWeight * angularFactor * distanceFactor;
+
+            // --- Smooth ---
+            float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
+            _headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, target, alpha);
+
+            return _headWeightSmoothed;
+        }
+
         /// <summary>
         /// For rigging purposes
         /// </summary>
