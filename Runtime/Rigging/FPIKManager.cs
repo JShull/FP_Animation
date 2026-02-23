@@ -64,7 +64,7 @@
         public float MinAngleFullTracking = 20f;
         
         [Tooltip("Speed of rotation blending")]
-        [Range(30,100)]
+        [Range(1,100)]
         public float HeadIKSpeed = 50;
         [Tooltip("Layer of the Animator we want")]
         public int AnimatorLayer = 1;
@@ -123,6 +123,7 @@
         [SerializeField] private float RootTurnSpeedDeg = 180f;
         [SerializeField] private float RootTurnOnAngle = 75f;   // turn ON when beyond this
         [SerializeField] private float RootTurnOffAngle = 55f;  // turn OFF when below this
+        [SerializeField] private float _bodyAssistSmoothed;
         private bool _rootTurning;
         #region Unity Functions
         protected virtual void Start()
@@ -242,8 +243,14 @@
             Vector3 toTargetFromPivot = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
             float lookAngle = Vector3.Angle(RelativePivotPos.forward, toTargetFromPivot);
 
-            float bodyAssist = Mathf.InverseLerp(BodyAssistStartAngle, BodyAssistFullAngle, lookAngle);
-            bodyAssist = Mathf.Clamp01(bodyAssist);
+            //float bodyAssist = Mathf.InverseLerp(BodyAssistStartAngle, BodyAssistFullAngle, lookAngle);
+            float bodyAssistTarget = Mathf.InverseLerp(BodyAssistStartAngle,BodyAssistFullAngle,lookAngle);
+            bodyAssistTarget = Mathf.Clamp01(bodyAssistTarget);
+            //smooth it
+            float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
+            _bodyAssistSmoothed = Mathf.Lerp(_bodyAssistSmoothed, bodyAssistTarget, alpha);
+            float bodyAssist = _bodyAssistSmoothed;
+            //bodyAssist = Mathf.Clamp01(bodyAssist);
 
             // Apply distributed weights (these are fine)
             if (HeadAimConstraint != null) HeadAimConstraint.weight = headBaseWeight;
@@ -637,7 +644,7 @@
             */
             data.worldUpType = MultiAimConstraintData.WorldUpType.SceneUp;
             //JOHN
-            data.limits = new Vector2(-120f,120f);
+            //data.limits = new Vector2(-120f,120f);
             data.maintainOffset = MaintainOffset;
 
             constraint.data = data;
