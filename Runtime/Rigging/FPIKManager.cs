@@ -11,7 +11,7 @@
         public HeadIKProvider IKProvider = HeadIKProvider.AnimatorIK;
         public bool MaintainOffset = true;
 
-        public bool IKBooleanGate = false;
+        //public bool IKBooleanGate = false;
 
         [Range(-1f, 1f)]
         public float IKScaleWeight = 1;
@@ -190,18 +190,11 @@
             }
             if (UseHeadIK && HeadAimConstraint != null)
             {
-                float absYaw;
+                //float absYaw; fuck bounds
                 //bool valid = IsTargetWithinHeadBounds(out absYaw);
                 float desiredWeight = 0f;
-                desiredWeight = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1f);
-                //if (valid)
-                //{
-                //    desiredWeight = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1f);
-                //}
-                //else
-                //{
-                //    desiredWeight = 0f;
-               // }
+                desiredWeight = NewComputeHeadWeight(useAnimatorIK: false, externalGate: 1f);
+                
                 float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
                 //_headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, desiredWeight, alpha);
                 if (desiredWeight < 0.01f)
