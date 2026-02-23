@@ -212,6 +212,12 @@ namespace FuzzPhyte.Utility.Animation.Editor
                     }
                     EditorGUILayout.PropertyField(headIKSpeed);
                     EditorGUILayout.PropertyField(trackingLookAtPosition);
+                    EditorGUILayout.Space();
+
+                    if (GUILayout.Button("Sync TrackingLookAtPosition To Body Aim Constraints"))
+                    {
+                        SyncTrackingTargetToConstraints();
+                    }
                     EditorGUILayout.PropertyField(relativePivotPos);
                     EditorGUILayout.PropertyField(maxAngleDropoff);
                     EditorGUILayout.PropertyField(minAngleFullTracking);
@@ -228,8 +234,6 @@ namespace FuzzPhyte.Utility.Animation.Editor
             else
             {
                 // Define a responsive Rect based on the Inspector width
-                
-
                 // Dynamic Height
                 // Example: Calculate height based on content (modify this as needed)
                 
@@ -238,6 +242,49 @@ namespace FuzzPhyte.Utility.Animation.Editor
             }
 
                 serializedObject.ApplyModifiedProperties();
+        }
+        private void SyncTrackingTargetToConstraints()
+        {
+            serializedObject.ApplyModifiedProperties();
+
+            FPIKManager manager =
+                (FPIKManager)target;
+
+            if (manager == null || manager.TrackingLookAtPosition == null)
+            {
+                Debug.LogWarning("TrackingLookAtPosition is not assigned.");
+                return;
+            }
+
+            Transform tracking = manager.TrackingLookAtPosition;
+
+            Undo.RecordObject(manager, "Sync Tracking Target");
+
+            ApplyTrackingToConstraint(manager.HeadAimConstraint, tracking);
+            ApplyTrackingToConstraint(manager.NeckAimConstraint, tracking);
+            ApplyTrackingToConstraint(manager.ChestAimConstraint, tracking);
+            ApplyTrackingToConstraint(manager.SpineAimConstraint, tracking);
+
+            EditorUtility.SetDirty(manager);
+        }
+        private void ApplyTrackingToConstraint(
+    UnityEngine.Animations.Rigging.MultiAimConstraint constraint,
+    Transform tracking)
+        {
+            if (constraint == null)
+                return;
+
+            Undo.RecordObject(constraint, "Sync Tracking Target");
+
+            var data = constraint.data;
+
+            var newSources = new UnityEngine.Animations.Rigging.WeightedTransformArray();
+            newSources.Add(new UnityEngine.Animations.Rigging.WeightedTransform(tracking, 1f));
+
+            data.sourceObjects = newSources;
+            constraint.data = data;
+
+            EditorUtility.SetDirty(constraint);
         }
     }
 }
