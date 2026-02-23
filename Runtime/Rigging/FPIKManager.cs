@@ -11,8 +11,6 @@
         public HeadIKProvider IKProvider = HeadIKProvider.AnimatorIK;
         public bool MaintainOffset = true;
 
-        //public bool IKBooleanGate = false;
-
         [Range(-1f, 1f)]
         public float IKScaleWeight = 1;
         public bool IKActive = false;
@@ -119,7 +117,6 @@
         protected Vector3 leftHandPos;
         protected Vector3 rightHandPos;
         [SerializeField] private float RootTurnSpeedDeg = 180f;
-        [SerializeField] private bool useRootTransformRotate = true;
         [SerializeField] private float RootTurnOnAngle = 75f;   // turn ON when beyond this
         [SerializeField] private float RootTurnOffAngle = 55f;  // turn OFF when below this
         [SerializeField] private float _bodyAssistSmoothed;
@@ -128,7 +125,6 @@
         [SerializeField] private float HeadMaxYaw = 85f;
         [SerializeField] private float RootTurnStartYaw = 65f;
         private bool _headActive;
-        private bool _rootTurning;
         #region Unity Functions
         protected virtual void Start()
         {
@@ -314,10 +310,10 @@
             {
                 float dir = Mathf.Sign(signedYaw);
                 float step = RootTurnSpeedDeg * Time.deltaTime;
-                if (useRootTransformRotate)
-                {
-                    transform.Rotate(Vector3.up, dir * step, Space.World);
-                }
+                //if (useRootTransformRotate)
+                ///{
+                //    transform.Rotate(Vector3.up, dir * step, Space.World);
+                //}
             }
            
         }
