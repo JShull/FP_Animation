@@ -546,8 +546,14 @@
             distanceFactor = Mathf.Clamp01(distanceFactor);
 
             // --- Angle ---
-            Vector3 toTarget = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
-            float angle = Vector3.Angle(RelativePivotPos.forward, toTarget);
+            Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
+            Vector3 flatToTarget = Vector3.ProjectOnPlane(
+                TrackingLookAtPosition.position - transform.position,
+                Vector3.up).normalized;
+
+            float angle = Vector3.Angle(flatForward, flatToTarget);
+            //Vector3 toTarget = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
+            //float angle = Vector3.Angle(RelativePivotPos.forward, toTarget);
 
             float angularFactor = 1f - Mathf.InverseLerp(
                 MinAngleFullTracking,
