@@ -124,6 +124,8 @@
         [SerializeField] private float _bodyAssistSmoothed;
         [SerializeField] private float HeadEngageAngle = 70f;
         [SerializeField] private float HeadDisengageAngle = 85f;
+        [SerializeField] private float HeadMaxYaw = 85f;
+        [SerializeField] private float RootTurnStartYaw = 65f;
         private bool _headActive;
         private bool _rootTurning;
         #region Unity Functions
@@ -265,12 +267,7 @@
             float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
             _bodyAssistSmoothed = Mathf.Lerp(_bodyAssistSmoothed, bodyAssistTarget, alpha);
             float bodyAssist = _bodyAssistSmoothed;
-
-            // Apply distributed weights (these are fine)
-            //if (HeadAimConstraint != null) HeadAimConstraint.weight = headBaseWeight;
-            //if (NeckAimConstraint != null) NeckAimConstraint.weight = headBaseWeight * NeckWeightMultiplier * bodyAssist;
-            //if (ChestAimConstraint != null) ChestAimConstraint.weight = headBaseWeight * ChestWeightMultiplier * bodyAssist;
-            //if (SpineAimConstraint != null) SpineAimConstraint.weight = headBaseWeight * SpineWeightMultiplier * bodyAssist;
+            
             const float epsilon = 0.01f;
 
             bool enable = headBaseWeight > epsilon;
@@ -310,8 +307,21 @@
 
             Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
 
+            // signedYaw = Vector3.SignedAngle(flatForward, flatToTarget, Vector3.up);
+            //float absYaw = Mathf.Abs(signedYaw);
+
             float signedYaw = Vector3.SignedAngle(flatForward, flatToTarget, Vector3.up);
             float absYaw = Mathf.Abs(signedYaw);
+
+            bool shouldRootTurn = absYaw >= RootTurnStartYaw;
+
+            if (shouldRootTurn)
+            {
+                float dir = Mathf.Sign(signedYaw);
+                float step = RootTurnSpeedDeg * Time.deltaTime;
+                transform.Rotate(Vector3.up, dir * step, Space.World);
+            }
+            /*
             if (!_rootTurning && absYaw >= RootTurnOnAngle)
                 _rootTurning = true;
             else if (_rootTurning && absYaw <= RootTurnOffAngle)
@@ -322,6 +332,7 @@
                 float step = RootTurnSpeedDeg * Time.deltaTime;
                 //transform.Rotate(Vector3.up, dir * step, Space.World);
             }
+            */
         }
         
         #endregion
@@ -481,42 +492,6 @@
             }
         }
 
-        /*
-        /// <summary>
-        /// Logic on just HeadLook Weight for IK
-        /// </summary>
-        /// <returns></returns>
-        protected virtual float ComputeHeadWeight(bool useAnimatorIK = true, float externalGate=1f)
-        {
-            // 1) Distance factor
-            legacyDistanceToTarget = Vector3.Distance(RelativePivotPos.position, TrackingLookAtPosition.position);
-            legacyHypotenuse = ConeHeight / Mathf.Sin((180 - (90 + MaxAngleDropoff)) * Mathf.Deg2Rad) * Mathf.Sin(90 * Mathf.Deg2Rad);
-            var distanceFactor = Mathf.Clamp01(Mathf.InverseLerp(0f, legacyHypotenuse, legacyHypotenuse - legacyDistanceToTarget));
-
-            // 2) Angular factor
-            Vector3 toTarget = TrackingLookAtPosition.position - RelativePivotPos.position;
-            Vector3 pivotForward = RelativePivotPos.forward;
-            float angle = Vector3.Angle(pivotForward, toTarget);
-            var angularFactor = Mathf.Clamp01(1f - Mathf.InverseLerp(MinAngleFullTracking, MaxAngleDropoff, angle));
-
-            // 3) Gate (Animator IK layer or external rig layer)
-            float gate = useAnimatorIK
-                ? (IKAnimator != null ? IKAnimator.GetLayerWeight(AnimatorLayer) : 1f)
-                : Mathf.Clamp01(externalGate); // for RigBuilder path, often 1f or the Rig/RigLayer weight
-
-            // 4) Target cone weight and compose with distance
-            float coneTarget = gate * IKScaleWeight * angularFactor;
-            float target = 0.5f * (coneTarget + distanceFactor);
-
-            // 5) Framerate-independent smoothing toward target
-            float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime); // smooth factor
-            _headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, target, alpha);
-
-            legacyMeasuredWeight = _headWeightSmoothed;
-            return legacyMeasuredWeight;
-        }
-        */
-
         /// new IK Update
         protected virtual float NewComputeHeadWeight(bool useAnimatorIK = true, float externalGate = 1f)
         {
@@ -537,11 +512,11 @@
             float angle = Vector3.Angle(flatForward, flatToTarget);
             //Vector3 toTarget = (TrackingLookAtPosition.position - RelativePivotPos.position).normalized;
             //float angle = Vector3.Angle(RelativePivotPos.forward, toTarget);
-
-            float angularFactor = 1f - Mathf.InverseLerp(
-                MinAngleFullTracking,
-                MaxAngleDropoff,
-                angle);
+            float angularFactor = 1f;
+            //float angularFactor = 1f - Mathf.InverseLerp(
+            //    MinAngleFullTracking,
+            //    MaxAngleDropoff,
+            //    angle);
 
             angularFactor = Mathf.Clamp01(angularFactor);
 
@@ -569,8 +544,7 @@
             SetupAimConstraint(HeadAimConstraint, MaxAngleDropoff);
             SetupAimConstraint(NeckAimConstraint, MaxAngleDropoff * 0.8f);
             SetupAimConstraint(ChestAimConstraint, MaxAngleDropoff * 0.6f);
-            SetupAimConstraint(SpineAimConstraint, MaxAngleDropoff * 0.4f);
-           
+            SetupAimConstraint(SpineAimConstraint, MaxAngleDropoff * 0.4f); 
         }
 
         /// <summary>
@@ -630,6 +604,7 @@
                 LeftArmConstraint.data = leftHandData;
             }
         }
+        /*
         protected bool IsTargetWithinHeadBounds(out float absYaw)
         {
             absYaw = 0f;
@@ -653,7 +628,7 @@
 
             float signedYaw = Vector3.SignedAngle(flatForward, flatToTarget, Vector3.up);
             absYaw = Mathf.Abs(signedYaw);
-
+            
             // HARD cutoff
             if (!_headActive && absYaw <= HeadEngageAngle)
                 _headActive = true;
@@ -661,7 +636,38 @@
                 _headActive = false;
 
             return _headActive;
+            
+        }
+        */
+        protected bool IsTargetWithinHeadBounds(out float absYaw)
+        {
+            absYaw = 0f;
 
+            if (TrackingLookAtPosition == null)
+                return false;
+
+            // Distance gate
+            float dist = Vector3.Distance(transform.position, TrackingLookAtPosition.position);
+            if (dist > ConeHeight)
+                return false;
+
+            // Compute flat yaw (world-space horizontal)
+            Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+            Vector3 flatToTarget = Vector3.ProjectOnPlane(
+                TrackingLookAtPosition.position - transform.position,
+                Vector3.up);
+
+            if (flatForward.sqrMagnitude < 0.0001f || flatToTarget.sqrMagnitude < 0.0001f)
+                return false;
+
+            flatForward.Normalize();
+            flatToTarget.Normalize();
+
+            float signedYaw = Vector3.SignedAngle(flatForward, flatToTarget, Vector3.up);
+            absYaw = Mathf.Abs(signedYaw);
+
+            // HARD anatomical limit
+            return absYaw <= HeadMaxYaw;
         }
         #region Gizmos & Visualizations
 
