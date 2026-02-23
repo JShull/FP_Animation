@@ -647,7 +647,7 @@
                 return false;
 
             // Distance gate
-            float dist = Vector3.Distance(transform.position, TrackingLookAtPosition.position);
+            float dist = Vector3.Distance(RelativePivotPos.position, TrackingLookAtPosition.position);
             if (dist > ConeHeight)
                 return false;
 
