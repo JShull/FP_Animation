@@ -190,16 +190,17 @@
             if (UseHeadIK && HeadAimConstraint != null)
             {
                 float absYaw;
-                bool valid = IsTargetWithinHeadBounds(out absYaw);
+                //bool valid = IsTargetWithinHeadBounds(out absYaw);
                 float desiredWeight = 0f;
-                if (valid)
-                {
-                    desiredWeight = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1f);
-                }
-                else
-                {
-                    desiredWeight = 0f;
-                }
+                desiredWeight = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1f);
+                //if (valid)
+                //{
+                //    desiredWeight = NewComputeHeadWeight(useAnimatorIK: IKBooleanGate, externalGate: 1f);
+                //}
+                //else
+                //{
+                //    desiredWeight = 0f;
+               // }
                 float alpha = 1f - Mathf.Exp(-HeadIKSpeed * Time.deltaTime);
                 //_headWeightSmoothed = Mathf.Lerp(_headWeightSmoothed, desiredWeight, alpha);
                 if (desiredWeight < 0.01f)
@@ -604,7 +605,7 @@
                 LeftArmConstraint.data = leftHandData;
             }
         }
-        /*
+        
         protected bool IsTargetWithinHeadBounds(out float absYaw)
         {
             absYaw = 0f;
@@ -635,39 +636,7 @@
             else if (_headActive && absYaw >= HeadDisengageAngle)
                 _headActive = false;
 
-            return _headActive;
-            
-        }
-        */
-        protected bool IsTargetWithinHeadBounds(out float absYaw)
-        {
-            absYaw = 0f;
-
-            if (TrackingLookAtPosition == null)
-                return false;
-
-            // Distance gate
-            float dist = Vector3.Distance(RelativePivotPos.position, TrackingLookAtPosition.position);
-            if (dist > ConeHeight)
-                return false;
-
-            // Compute flat yaw (world-space horizontal)
-            Vector3 flatForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
-            Vector3 flatToTarget = Vector3.ProjectOnPlane(
-                TrackingLookAtPosition.position - transform.position,
-                Vector3.up);
-
-            if (flatForward.sqrMagnitude < 0.0001f || flatToTarget.sqrMagnitude < 0.0001f)
-                return false;
-
-            flatForward.Normalize();
-            flatToTarget.Normalize();
-
-            float signedYaw = Vector3.SignedAngle(flatForward, flatToTarget, Vector3.up);
-            absYaw = Mathf.Abs(signedYaw);
-
-            // HARD anatomical limit
-            return absYaw <= HeadMaxYaw;
+            return _headActive; 
         }
         #region Gizmos & Visualizations
 
