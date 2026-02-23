@@ -7,7 +7,7 @@ namespace FuzzPhyte.Utility.Animation.Editor
     [CustomEditor(typeof(FuzzPhyte.Utility.Animation.FPIKManager))]
     public class FPIKManagerEditor:Editor
     {
-        private SerializedProperty ikActive;
+        private SerializedProperty ikActive,useNewIkHeadFunction,useIkbooleanGate;
         private SerializedProperty ikAnimator;
         private SerializedProperty hipRelativeForward;
         private SerializedProperty gizmoActive;
@@ -35,6 +35,8 @@ namespace FuzzPhyte.Utility.Animation.Editor
         {
             // General IK settings
             ikActive = serializedObject.FindProperty("IKActive");
+            useNewIkHeadFunction = serializedObject.FindProperty("UseNewIKHeadFunction");
+            useIkbooleanGate = serializedObject.FindProperty("IKBooleanGate");
             ikAnimator = serializedObject.FindProperty("IKAnimator");
             hipRelativeForward = serializedObject.FindProperty("HipRelativeForward");
             gizmoActive = serializedObject.FindProperty("ShowHeadIKGizmo");
@@ -86,6 +88,8 @@ namespace FuzzPhyte.Utility.Animation.Editor
             
             if (ikActive.boolValue)
             {
+                EditorGUILayout.PropertyField(useNewIkHeadFunction);
+                EditorGUILayout.PropertyField(useIkbooleanGate);
                 EditorGUILayout.PropertyField(ikAnimator);
                 EditorGUILayout.PropertyField(hipRelativeForward);
                 EditorGUILayout.PropertyField(headIKMode);
