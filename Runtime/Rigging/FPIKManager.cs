@@ -119,6 +119,7 @@
         protected Vector3 leftHandPos;
         protected Vector3 rightHandPos;
         [SerializeField] private float RootTurnSpeedDeg = 180f;
+        [SerializeField] private bool useRootTransformRotate = true;
         [SerializeField] private float RootTurnOnAngle = 75f;   // turn ON when beyond this
         [SerializeField] private float RootTurnOffAngle = 55f;  // turn OFF when below this
         [SerializeField] private float _bodyAssistSmoothed;
@@ -320,20 +321,12 @@
             {
                 float dir = Mathf.Sign(signedYaw);
                 float step = RootTurnSpeedDeg * Time.deltaTime;
-                transform.Rotate(Vector3.up, dir * step, Space.World);
+                if (useRootTransformRotate)
+                {
+                    transform.Rotate(Vector3.up, dir * step, Space.World);
+                }
             }
-            /*
-            if (!_rootTurning && absYaw >= RootTurnOnAngle)
-                _rootTurning = true;
-            else if (_rootTurning && absYaw <= RootTurnOffAngle)
-                _rootTurning = false;
-            if (_rootTurning)
-            {
-                float dir = Mathf.Sign(signedYaw);
-                float step = RootTurnSpeedDeg * Time.deltaTime;
-                //transform.Rotate(Vector3.up, dir * step, Space.World);
-            }
-            */
+           
         }
         
         #endregion
