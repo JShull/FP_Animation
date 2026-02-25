@@ -63,6 +63,10 @@ namespace FuzzPhyte.Utility.Animation
         #endregion
         #region public accessors
         #region IAnimInjection Interface
+        public void PlayClip(FPAnimationData data)
+        {
+            PlayClip(data.Clip, data.FadeIn, data.FadeOut, data.TargetWeight, data.Mask, data.Additive, data.AnimationSpeed, data.BackToOriginal);
+        }
         /// <summary>
         /// Inject an animation clip into the current animator
         /// </summary>
@@ -88,6 +92,7 @@ namespace FuzzPhyte.Utility.Animation
             // Start a handoff coroutine
             StartCoroutine(PlayClipHandoffRoutine(clip, fadeIn, fadeOut, targetWeight, mask, additive, speed,backToOriginal));
         }
+        
 
         /// <summary>
         /// Requests a smooth stop of the current injection. 
